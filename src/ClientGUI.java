@@ -1,4 +1,5 @@
 import javax.swing.*;
+import javax.swing.border.BevelBorder;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -13,22 +14,46 @@ public class ClientGUI extends JFrame{
 
     private JTextArea messages;
     private JTextArea sendTxt;
+    private JScrollPane messageScrollPane;
     public ClientGUI(Client cli){
         client = cli;
-        BuildChat();
+        createWindow(buildChat(),buildMenu());
     }
 
-    private void BuildChat(){
+    private void createWindow(JPanel chat, JPanel menu) {
+        setLayout(new GridLayout(1,2));
+        setSize(new Dimension(1000,400));
+        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setVisible(true);
+        add(menu);
+        add(chat);
+    }
+
+    private JPanel buildMenu() {
+        JPanel menuPanel = new JPanel();
+        JButton playGame = new JButton();
+
+        return menuPanel;
+    }
+
+    private JPanel buildChat(){
         JPanel chatPanel = new JPanel();
-        messages = new JTextArea(10,40);
+        //chatPanel.setLayout(new GridLayout(2,1));
+        //chatPanel.setBorder(new BevelBorder(BevelBorder.LOWERED));
+        JPanel messagePanel = new JPanel();
+        messagePanel.setLayout(new BoxLayout(messagePanel, BoxLayout.Y_AXIS));
+        messages = new JTextArea(13,40);
         messages.setLineWrap(true);
         messages.setWrapStyleWord(true);
         messages.setText("");
         messages.setEditable(false);
-        JScrollPane messageScrollPane = new JScrollPane(messages);
-        chatPanel.add(messageScrollPane);
+        messageScrollPane = new JScrollPane(messages);
+        messagePanel.add(messageScrollPane);
 
-        sendTxt = new JTextArea(4,20);
+        JPanel sendPanel = new JPanel();
+        sendPanel.setLayout(new BoxLayout(sendPanel, BoxLayout.Y_AXIS));
+        sendTxt = new JTextArea(5,20);
         sendTxt.setLineWrap(true);
         sendTxt.setWrapStyleWord(true);
         sendTxt.setEditable(true);
@@ -51,26 +76,28 @@ public class ClientGUI extends JFrame{
             }
         });
         JScrollPane sendScrollPane = new JScrollPane(sendTxt);
-        chatPanel.add(sendScrollPane);
-        add(chatPanel);
+        sendPanel.add(sendScrollPane);
 
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.LINE_AXIS));
+        buttonPanel.add(Box.createHorizontalGlue());
         JButton send = new JButton("Send");
         send.addActionListener((e) -> {
             client.sendMessage(send());
         });
-        chatPanel.add(send);
+        buttonPanel.add(send);
 
+        buttonPanel.add(Box.createRigidArea(new Dimension(10,0)));
         JButton cancel = new JButton("Cancel");
         cancel.addActionListener((e) -> {
-
             this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
         });
-        chatPanel.add(cancel);
-
-        setSize(new Dimension(500,300));
-        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setVisible(true);
+        buttonPanel.add(cancel);
+        buttonPanel.add(Box.createRigidArea(new Dimension(10,0)));
+        sendPanel.add(buttonPanel);
+        JSplitPane textBoxes = new JSplitPane(JSplitPane.VERTICAL_SPLIT,messagePanel,sendPanel);
+        chatPanel.add(textBoxes);
+        return chatPanel;
     }
 
     private String send() {
@@ -81,5 +108,7 @@ public class ClientGUI extends JFrame{
 
     protected void newMessage(String user,String msg){
         messages.append(user + ": " + msg + "\r\n");
+        JScrollBar bar = messageScrollPane.getVerticalScrollBar();
+        bar.setValue(bar.getMaximum());
     }
 }

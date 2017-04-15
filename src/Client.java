@@ -22,6 +22,7 @@ public class Client implements Receivable{
     }
 
     public Client() {
+        userNotSet = true;
         try {
             handler = new junoServer.Protocol(this);
         }catch(IOException e){
@@ -55,15 +56,6 @@ public class Client implements Receivable{
         }
     }
 
-//    protected void sendMessage(String msg){
-//        JSONObject chatMessage = new JSONObject();
-//        chatMessage.put("type","chat");
-//        chatMessage.put("message",msg);
-//        handler.sendMessage(chatMessage);
-//        gui.newMessage("Nate",msg);
-//        System.out.println(chatMessage);
-//    }
-
     protected void sendMessage(String msg){
         JSONObject chatMessage = new JSONObject();
         chatMessage.put("type","chat");
@@ -77,7 +69,7 @@ public class Client implements Receivable{
             chatMessage.put("username",user);
         }
         handler.sendMessage(chatMessage);
-        gui.newMessage("Nate",msg);
+        gui.newMessage("\t" + userName,msg);
         System.out.println(chatMessage);
     }
 }
