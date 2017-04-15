@@ -25,17 +25,17 @@ public class Client implements Receivable{
         userNotSet = true;
         try {
             handler = new junoServer.Protocol(this);
+            gui = new ClientGUI(this);
+            gui.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    System.exit(0);
+                }
+            });
         }catch(IOException e){
             e.printStackTrace();
+            JOptionPane.showMessageDialog(gui, "There was an error connecting to the server","Connection Error",JOptionPane.ERROR_MESSAGE);
         }
-
-        gui = new ClientGUI(this);
-        gui.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosed(WindowEvent e) {
-                System.exit(0);
-            }
-        });
     }
 
     @Override
@@ -71,5 +71,9 @@ public class Client implements Receivable{
         handler.sendMessage(chatMessage);
         gui.newMessage("\t" + userName,msg);
         System.out.println(chatMessage);
+    }
+
+    protected void sendMessage(JSONObject msg){
+        handler.sendMessage(msg);
     }
 }
