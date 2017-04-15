@@ -3,6 +3,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
+import java.util.regex.Matcher;
 
 /**
  * Created by Nate on 4/14/2017.
@@ -74,9 +75,6 @@ public class ClientGUI extends JFrame{
 
     private String send() {
         String message = sendTxt.getText();
-        if(message.contains("@")){
-            message.
-        }
         sendTxt.setText("");
         return message;
     }

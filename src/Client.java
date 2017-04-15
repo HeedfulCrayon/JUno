@@ -6,6 +6,8 @@ import javax.swing.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by Nate on 4/10/2017.
@@ -53,20 +55,27 @@ public class Client implements Receivable{
         }
     }
 
+//    protected void sendMessage(String msg){
+//        JSONObject chatMessage = new JSONObject();
+//        chatMessage.put("type","chat");
+//        chatMessage.put("message",msg);
+//        handler.sendMessage(chatMessage);
+//        gui.newMessage("Nate",msg);
+//        System.out.println(chatMessage);
+//    }
+
     protected void sendMessage(String msg){
         JSONObject chatMessage = new JSONObject();
         chatMessage.put("type","chat");
         chatMessage.put("message",msg);
-        handler.sendMessage(chatMessage);
-        gui.newMessage("Nate",msg);
-        System.out.println(chatMessage);
-    }
-
-    protected void sendMessage(String user, String msg){
-        JSONObject chatMessage = new JSONObject();
-        chatMessage.put("type","chat");
-        chatMessage.put("message",msg);
-        chatMessage.put("username",user);
+        String regex = "(?<=^|(?<=[^a-zA-Z0-9-_\\\\.]))@([A-Za-z][A-Za-z0-9_]+)";
+        Matcher matcher = Pattern.compile(regex).matcher(msg);
+        if (matcher.find()) {
+            String symUser = matcher.group(0);
+            StringBuilder sb = new StringBuilder(symUser);
+            String user = (sb.deleteCharAt(0)).toString();
+            chatMessage.put("username",user);
+        }
         handler.sendMessage(chatMessage);
         gui.newMessage("Nate",msg);
         System.out.println(chatMessage);
