@@ -1,3 +1,5 @@
+import org.json.JSONObject;
+
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
 import java.awt.*;
@@ -22,7 +24,7 @@ public class ClientGUI extends JFrame{
 
     private void createWindow(JPanel chat, JPanel menu) {
         setLayout(new GridLayout(1,2));
-        setSize(new Dimension(1000,400));
+        setSize(new Dimension(1200,400));
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
         setVisible(true);
@@ -32,15 +34,19 @@ public class ClientGUI extends JFrame{
 
     private JPanel buildMenu() {
         JPanel menuPanel = new JPanel();
-        JButton playGame = new JButton();
-
+        JButton playGame = new JButton("Play Game");
+        playGame.addActionListener((e -> {
+            JSONObject playMsg = new JSONObject();
+            playMsg.put("type","application");
+            playMsg.put("message","startgame");
+            client.sendMessage(playMsg);
+        }));
+        menuPanel.add(playGame);
         return menuPanel;
     }
 
     private JPanel buildChat(){
         JPanel chatPanel = new JPanel();
-        //chatPanel.setLayout(new GridLayout(2,1));
-        //chatPanel.setBorder(new BevelBorder(BevelBorder.LOWERED));
         JPanel messagePanel = new JPanel();
         messagePanel.setLayout(new BoxLayout(messagePanel, BoxLayout.Y_AXIS));
         messages = new JTextArea(13,40);
