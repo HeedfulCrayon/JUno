@@ -32,7 +32,7 @@ public class Client implements Receivable{
                     System.exit(0);
                 }
             });
-            new Thread(new Writer()).start();
+            //new Thread(new Writer()).start();
         }catch(IOException e){
             e.printStackTrace();
             JOptionPane.showMessageDialog(gui, "There was an error connecting to the server","Connection Error",JOptionPane.ERROR_MESSAGE);
@@ -48,8 +48,9 @@ public class Client implements Receivable{
         }else if(message.getString("type").equals("whois")){
             message.remove("type");
             gui.updateWhoIs(message);
+        }else {
+            System.out.println(message);
         }
-        System.out.println(message);
     }
 
     @Override
@@ -77,12 +78,13 @@ public class Client implements Receivable{
                 message.put("username", user);
             }
             gui.newMessage("\t" + userName, msg);
-            System.out.println(message);
+//            System.out.println(message);
         }
         handler.sendMessage(message);
     }
 
     void sendMessage(JSONObject msg){
+        System.out.println(msg);
         handler.sendMessage(msg);
     }
 
