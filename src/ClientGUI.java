@@ -1,11 +1,16 @@
+import jdk.nashorn.internal.parser.JSONParser;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
+import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
+import java.util.*;
+import java.util.List;
 import java.util.regex.Matcher;
 
 /**
@@ -17,19 +22,35 @@ public class ClientGUI extends JFrame{
     private JTextArea messages;
     private JTextArea sendTxt;
     private JScrollPane messageScrollPane;
-    public ClientGUI(Client cli){
+    private JPanel users;
+    private JPanel modules;
+    List<JLabel> labels;
+    ClientGUI(Client cli){
         client = cli;
-        createWindow(buildChat(),buildMenu());
+        createWindow(buildChat(),buildMenu(),buildWhois());
     }
 
-    private void createWindow(JPanel chat, JPanel menu) {
-        setLayout(new GridLayout(1,2));
-        setSize(new Dimension(1200,400));
+    private JPanel buildWhois() {
+        JPanel whoIsPanel = new JPanel();
+        whoIsPanel.setBorder(new BevelBorder(BevelBorder.LOWERED));
+        whoIsPanel.setLayout(new GridLayout(1,2));
+        modules = new JPanel();
+        whoIsPanel.add(modules);
+        users = new JPanel();
+        whoIsPanel.add(users);
+        return whoIsPanel;
+    }
+
+    private void createWindow(JPanel chat, JPanel menu, JPanel whoIs) {
+        setLayout(new GridLayout(1,3));
+        setSize(new Dimension(1500,400));
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
         setVisible(true);
         add(menu);
         add(chat);
+        add(whoIs);
+        sendTxt.grabFocus();
     }
 
     private JPanel buildMenu() {
@@ -112,9 +133,58 @@ public class ClientGUI extends JFrame{
         return message;
     }
 
-    protected void newMessage(String user,String msg){
+    void newMessage(String user,String msg){
         messages.append(user + ": " + msg + "\r\n");
         JScrollBar bar = messageScrollPane.getVerticalScrollBar();
         bar.setValue(bar.getMaximum());
+    }
+
+    void updateWhoIs(JSONObject jsnWhois){
+        JSONArray jsnUsers = jsnWhois.getJSONObject("message").getJSONArray("users");
+        System.out.println(jsnWhois);
+        List<JSONObject> userList = new ArrayList<JSONObject>();
+        for (int i = 0; i < jsnUsers.length(); i++){
+            userList.add(jsnUsers.getJSONObject(i));
+        }
+//        System.out.println(userList);
+        users.removeAll();
+        users.setLayout(new BoxLayout(users,BoxLayout.Y_AXIS));
+        users.setBorder(new BevelBorder(BevelBorder.LOWERED));
+        JLabel userTitle = new JLabel("Users Online");
+        userTitle.setFont(new Font(userTitle.getFont().getName(),Font.PLAIN,14));
+        users.add(userTitle);
+        users.add(Box.createHorizontalGlue());
+        for (JSONObject user:userList) {
+            users.add(new JLabel(user.get("username").toString()));
+            users.add(new JLabel(user.get("modules").toString()));
+        }
+        users.updateUI();
+
+        JSONArray jsnModules = jsnWhois.getJSONObject("message").getJSONArray("modules");
+        List<JSONObject> moduleList = new ArrayList<JSONObject>();
+        for (int i = 0; i < jsnModules.length(); i++){
+            moduleList.add(jsnModules.getJSONObject(i));
+        }
+//        System.out.println(moduleList);
+        modules.removeAll();
+        modules.setLayout(new BoxLayout(modules,BoxLayout.Y_AXIS));
+        modules.setBorder(new BevelBorder(BevelBorder.LOWERED));
+        JLabel gamesTitle = new JLabel("Games");
+        gamesTitle.setFont(new Font(gamesTitle.getFont().getName(),Font.PLAIN,14));
+        modules.add(gamesTitle);
+        modules.add(Box.createHorizontalGlue());
+        for (JSONObject module:moduleList) {
+            modules.add(new JLabel(module.get("moduleName").toString()));
+            JLabel status = new JLabel();
+            if(module.getBoolean("started")){
+                status.setText("started");
+                status.setForeground(Color.GREEN);
+            }else{
+                status.setText("not started");
+                status.setForeground(Color.RED);
+            }
+            modules.add(status);
+        }
+        modules.updateUI();
     }
 }

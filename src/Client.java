@@ -44,6 +44,9 @@ public class Client implements Receivable{
             System.out.println("Logged in");
         }else if(message.getString("type").equals("chat")){
             gui.newMessage(message.getString("fromUser"),message.getString("message"));
+        }else if(message.getString("type").equals("whois")){
+            message.remove("type");
+            gui.updateWhoIs(message);
         }
         System.out.println(message);
     }
@@ -56,24 +59,30 @@ public class Client implements Receivable{
         }
     }
 
-    protected void sendMessage(String msg){
-        JSONObject chatMessage = new JSONObject();
-        chatMessage.put("type","chat");
-        chatMessage.put("message",msg);
-        String regex = "(?<=^|(?<=[^a-zA-Z0-9-_\\\\.]))@([A-Za-z][A-Za-z0-9_]+)";
-        Matcher matcher = Pattern.compile(regex).matcher(msg);
-        if (matcher.find()) {
-            String symUser = matcher.group(0);
-            StringBuilder sb = new StringBuilder(symUser);
-            String user = (sb.deleteCharAt(0)).toString();
-            chatMessage.put("username",user);
+    void sendMessage(String msg){
+        JSONObject message = new JSONObject();
+        if (msg.equals("whois")){
+            message.put("type","whois");
+        }else {
+
+            message.put("type", "chat");
+            message.put("message", msg);
+            String regex = "(?<=^|(?<=[^a-zA-Z0-9-_\\\\.]))@([A-Za-z][A-Za-z0-9_]+)";
+            Matcher whisperMatcher = Pattern.compile(regex).matcher(msg);
+            if (whisperMatcher.find()) {
+                String symUser = whisperMatcher.group(0);
+                StringBuilder sb = new StringBuilder(symUser);
+                String user = (sb.deleteCharAt(0)).toString();
+                message.put("username", user);
+            }
+            gui.newMessage("\t" + userName, msg);
+            System.out.println(message);
         }
-        handler.sendMessage(chatMessage);
-        gui.newMessage("\t" + userName,msg);
-        System.out.println(chatMessage);
+        handler.sendMessage(message);
     }
 
-    protected void sendMessage(JSONObject msg){
+    void sendMessage(JSONObject msg){
         handler.sendMessage(msg);
     }
+    
 }
