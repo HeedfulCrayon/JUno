@@ -54,12 +54,7 @@ class ClientGUI extends JFrame{
         JPanel menuPanel = new JPanel();
         JButton playGame = new JButton("Play Game");
         playGame.addActionListener((e -> {
-            JSONObject playMsg = new JSONObject();
-            playMsg.put("type","application");
-            playMsg.put("action","joinGame");
-            playMsg.put("moduleName","juno");
-            System.out.println(playMsg);
-            client.sendMessage(playMsg);
+            playGame();
         }));
         menuPanel.add(playGame);
         return menuPanel;
@@ -173,9 +168,13 @@ class ClientGUI extends JFrame{
         modules.add(Box.createHorizontalGlue());
         for (JSONObject module:moduleList) {
             modules.add(Box.createRigidArea(new Dimension(10,5)));
-            modules.add(new JLabel(module.get("moduleName").toString()));
+            String strGameName = module.get("moduleName").toString();
+            modules.add(new JLabel(strGameName));
             JLabel status = new JLabel();
             if(module.getBoolean("started")){
+                if (strGameName.equals("juno")){
+                    client.gameStarted = true;
+                }
                 status.setText("started");
                 status.setForeground(Color.GREEN);
             }else{
@@ -185,5 +184,19 @@ class ClientGUI extends JFrame{
             modules.add(status);
         }
         modules.updateUI();
+    }
+
+    void playGame(){
+        JSONObject playMsg = new JSONObject();
+        playMsg.put("type", "application");
+        JSONObject game = new JSONObject();
+        if (client.gameStarted) {
+            game.put("action", "joinGame");
+        }else{
+            game.put("action", "startGame");
+        }
+        game.put("module", "juno");
+        playMsg.put("message", game);
+        client.sendMessage(playMsg);
     }
 }

@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
  */
 public class Client implements Receivable{
     private boolean userNotSet;
+    boolean gameStarted = false;
     private String userName;
     private Protocol handler;
     private ClientGUI gui;
