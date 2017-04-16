@@ -1,22 +1,18 @@
-import jdk.nashorn.internal.parser.JSONParser;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
-import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.util.*;
 import java.util.List;
-import java.util.regex.Matcher;
 
 /**
  * Created by Nate on 4/14/2017.
  */
-public class ClientGUI extends JFrame{
+class ClientGUI extends JFrame{
     private Client client;
 
     private JTextArea messages;
@@ -50,6 +46,7 @@ public class ClientGUI extends JFrame{
         add(menu);
         add(chat);
         add(whoIs);
+        setTitle("Game Server");
         sendTxt.grabFocus();
     }
 
@@ -59,7 +56,9 @@ public class ClientGUI extends JFrame{
         playGame.addActionListener((e -> {
             JSONObject playMsg = new JSONObject();
             playMsg.put("type","application");
-            playMsg.put("message","startgame");
+            playMsg.put("action","joinGame");
+            playMsg.put("moduleName","juno");
+            System.out.println(playMsg);
             client.sendMessage(playMsg);
         }));
         menuPanel.add(playGame);
