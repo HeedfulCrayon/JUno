@@ -32,6 +32,7 @@ public class Client implements Receivable{
                     System.exit(0);
                 }
             });
+            new Thread(new Writer()).start();
         }catch(IOException e){
             e.printStackTrace();
             JOptionPane.showMessageDialog(gui, "There was an error connecting to the server","Connection Error",JOptionPane.ERROR_MESSAGE);
@@ -84,5 +85,20 @@ public class Client implements Receivable{
     void sendMessage(JSONObject msg){
         handler.sendMessage(msg);
     }
-    
+
+    private class Writer implements Runnable {
+
+        @Override
+        public void run() {
+            try {
+                while(true){
+                    sendMessage("whois");
+                    Thread.sleep(10000);
+                }
+            }catch(InterruptedException e){
+                e.printStackTrace();
+            }
+
+        }
+    }
 }
