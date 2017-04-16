@@ -22,7 +22,7 @@ public class Client implements Receivable{
         Client client = new Client();
     }
 
-    public Client() {
+    Client() {
         userNotSet = true;
         try {
             handler = new junoServer.Protocol(this);

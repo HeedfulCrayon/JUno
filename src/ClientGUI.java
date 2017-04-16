@@ -57,6 +57,11 @@ class ClientGUI extends JFrame{
             playGame();
         }));
         menuPanel.add(playGame);
+        JButton quitGame = new JButton("Quit Game");
+        quitGame.addActionListener((e -> {
+            quitGame();
+        }));
+        menuPanel.add(quitGame);
         return menuPanel;
     }
 
@@ -186,7 +191,7 @@ class ClientGUI extends JFrame{
         modules.updateUI();
     }
 
-    void playGame(){
+    private void playGame(){
         JSONObject playMsg = new JSONObject();
         playMsg.put("type", "application");
         JSONObject game = new JSONObject();
@@ -196,6 +201,20 @@ class ClientGUI extends JFrame{
             game.put("action", "startGame");
         }
         game.put("module", "juno");
+        playMsg.put("message", game);
+        client.sendMessage(playMsg);
+    }
+
+    private void quitGame() {
+        JSONObject playMsg = new JSONObject();
+        playMsg.put("type", "application");
+        JSONObject game = new JSONObject();
+        if (client.gameStarted) {
+            game.put("action", "quitGame");
+        }else{
+            game.put("action", "quitGame");
+        }
+        game.put("module", "undefined");
         playMsg.put("message", game);
         client.sendMessage(playMsg);
     }
