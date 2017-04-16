@@ -146,17 +146,17 @@ public class ClientGUI extends JFrame{
         for (int i = 0; i < jsnUsers.length(); i++){
             userList.add(jsnUsers.getJSONObject(i));
         }
-//        System.out.println(userList);
         users.removeAll();
         users.setLayout(new BoxLayout(users,BoxLayout.Y_AXIS));
         users.setBorder(new BevelBorder(BevelBorder.LOWERED));
         JLabel userTitle = new JLabel("Users Online");
-        userTitle.setFont(new Font(userTitle.getFont().getName(),Font.PLAIN,14));
+        userTitle.setFont(new Font(userTitle.getFont().getName(),Font.BOLD,14));
         users.add(userTitle);
         users.add(Box.createHorizontalGlue());
         for (JSONObject user:userList) {
+            users.add(Box.createRigidArea(new Dimension(10,5)));
             users.add(new JLabel(user.get("username").toString()));
-            users.add(new JLabel(user.get("modules").toString()));
+            users.add(new JLabel("Modules: " + user.get("modules").toString()));
         }
         users.updateUI();
 
@@ -165,15 +165,15 @@ public class ClientGUI extends JFrame{
         for (int i = 0; i < jsnModules.length(); i++){
             moduleList.add(jsnModules.getJSONObject(i));
         }
-//        System.out.println(moduleList);
         modules.removeAll();
         modules.setLayout(new BoxLayout(modules,BoxLayout.Y_AXIS));
         modules.setBorder(new BevelBorder(BevelBorder.LOWERED));
         JLabel gamesTitle = new JLabel("Games");
-        gamesTitle.setFont(new Font(gamesTitle.getFont().getName(),Font.PLAIN,14));
+        gamesTitle.setFont(new Font(gamesTitle.getFont().getName(),Font.BOLD,14));
         modules.add(gamesTitle);
         modules.add(Box.createHorizontalGlue());
         for (JSONObject module:moduleList) {
+            modules.add(Box.createRigidArea(new Dimension(10,5)));
             modules.add(new JLabel(module.get("moduleName").toString()));
             JLabel status = new JLabel();
             if(module.getBoolean("started")){
