@@ -13,6 +13,7 @@ import java.util.List;
  * Created by Nate on 4/14/2017.
  */
 class ClientGUI extends JFrame{
+    private static final long serialVersionUID = 3403737665582698443L;
     private Client client;
 
     private JTextArea messages;
@@ -20,10 +21,13 @@ class ClientGUI extends JFrame{
     private JScrollPane messageScrollPane;
     private JPanel users;
     private JPanel modules;
+    private JPanel menuPanel;
+    private JPanel gamePanel;
+    private JPanel myCardPanel;
     List<JLabel> labels;
     ClientGUI(Client cli){
         client = cli;
-        createWindow(buildChat(),buildMenu(),buildWhois());
+        createWindow(buildChat(), buildGame(),buildWhois());
     }
 
     private JPanel buildWhois() {
@@ -50,18 +54,16 @@ class ClientGUI extends JFrame{
         sendTxt.grabFocus();
     }
 
-    private JPanel buildMenu() {
-        JPanel menuPanel = new JPanel();
-        JButton playGame = new JButton("Play Game");
-        playGame.addActionListener((e -> {
-            playGame();
-        }));
-        menuPanel.add(playGame);
-        JButton quitGame = new JButton("Quit Game");
-        quitGame.addActionListener((e -> {
-            quitGame();
-        }));
-        menuPanel.add(quitGame);
+    private JPanel buildGame() {
+        menuPanel = new JPanel();
+        menuPanel.setLayout(new BoxLayout(menuPanel,BoxLayout.Y_AXIS));
+        addMenuButtons();
+        gamePanel = new JPanel();
+        gamePanel.setLayout(new BorderLayout(5,5));
+        myCardPanel = new JPanel();
+        myCardPanel.setLayout(new FlowLayout());
+        gamePanel.add(myCardPanel,BorderLayout.SOUTH);
+        menuPanel.add(gamePanel);
         return menuPanel;
     }
 
@@ -139,6 +141,7 @@ class ClientGUI extends JFrame{
     }
 
     void updateWhoIs(JSONObject jsnWhois){
+        client.gameUserCount = 0;
         JSONArray jsnUsers = jsnWhois.getJSONObject("message").getJSONArray("users");
         System.out.println(jsnWhois);
         List<JSONObject> userList = new ArrayList<JSONObject>();
@@ -155,7 +158,15 @@ class ClientGUI extends JFrame{
         for (JSONObject user:userList) {
             users.add(Box.createRigidArea(new Dimension(10,5)));
             users.add(new JLabel(user.get("username").toString()));
-            users.add(new JLabel("Modules: " + user.get("modules").toString()));
+            JSONArray jsnUserModules = user.getJSONArray("modules");
+            JLabel userModules = new JLabel("Games: ");
+            for (int i = 0; i < jsnUserModules.length(); i++){
+                userModules.setText(userModules.getText() + jsnUserModules.getString(i) + "  ");
+                if (jsnUserModules.getString(i).equals("juno")){
+                    client.gameUserCount++;
+                }
+            }
+            users.add(userModules);
         }
         users.updateUI();
 
@@ -177,7 +188,7 @@ class ClientGUI extends JFrame{
             modules.add(new JLabel(strGameName));
             JLabel status = new JLabel();
             if(module.getBoolean("started")){
-                if (strGameName.equals("juno")){
+                if (strGameName.equals("juno") && client.gameUserCount >= 2){
                     client.gameStarted = true;
                 }
                 status.setText("started");
@@ -196,9 +207,9 @@ class ClientGUI extends JFrame{
         playMsg.put("type", "application");
         JSONObject game = new JSONObject();
         if (client.gameStarted) {
-            game.put("action", "joinGame");
-        }else{
             game.put("action", "startGame");
+        }else{
+            game.put("action", "joinGame");
         }
         game.put("module", "juno");
         playMsg.put("message", game);
@@ -214,8 +225,74 @@ class ClientGUI extends JFrame{
         }else{
             game.put("action", "quitGame");
         }
-        game.put("module", "undefined");
+        game.put("module", "juno");
         playMsg.put("message", game);
         client.sendMessage(playMsg);
+        myCardPanel.removeAll();
+    }
+
+    void placeCard(JSONObject msg){
+        if(msg.has("action")){
+            JSONObject jsnCard = new JSONObject(msg.getString("card"));
+            Card.Color c = Card.Color.valueOf(jsnCard.getString("color").toUpperCase());
+            Card.Value val = Card.Value.valueOf(jsnCard.getString("value").toUpperCase());
+            Card card = new Card(c,val);
+            card.setBorder(BorderFactory.createEmptyBorder());
+            card.addActionListener((e -> {
+                JSONObject message = new JSONObject();
+                JSONObject playCard = new JSONObject();
+                JSONObject newCard = new JSONObject();
+                message.put("type","application");
+                playCard.put("action","playCard");
+                newCard.put("Color",c);
+                newCard.put("Value",val);
+                playCard.put("card",newCard);
+                message.put("message",playCard);
+                client.sendMessage(message);
+                myCardPanel.remove(card);
+                myCardPanel.updateUI();
+            }));
+            myCardPanel.add(card);
+            myCardPanel.updateUI();
+        }else if(msg.has("type")){
+
+        }
+    }
+
+    private void addMenuButtons(){
+        JToolBar toolbar = new JToolBar();
+        JButton playGame = new JButton("Play Game");
+        JButton callUno = new JButton("Call Uno");
+        JButton quitGame = new JButton("Quit Game");
+        playGame.addActionListener((e -> {
+            playGame.setVisible(false);
+            callUno.setVisible(true);
+            quitGame.setVisible(true);
+            menuPanel.updateUI();
+            playGame();
+        }));
+        toolbar.add(playGame);
+        callUno.addActionListener((e -> {
+            callUno();
+        }));
+        callUno.setVisible(false);
+        toolbar.add(callUno);
+        quitGame.addActionListener((e -> {
+            quitGame.setVisible(false);
+            callUno.setVisible(false);
+            playGame.setVisible(true);
+            menuPanel.updateUI();
+            quitGame();
+        }));
+        quitGame.setVisible(false);
+        toolbar.add(quitGame);
+        toolbar.setFloatable(false);
+        toolbar.setBorderPainted(false);
+        toolbar.setAlignmentX(Component.LEFT_ALIGNMENT);
+        menuPanel.add(toolbar);
+        menuPanel.updateUI();
+    }
+
+    private void callUno() {
     }
 }

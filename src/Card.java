@@ -1,23 +1,14 @@
 
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
+import javax.swing.*;
 
-public class Card extends JLabel {
+public class Card extends JButton {
+	private static final long serialVersionUID = 1700177456984817126L;
+
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -919021369126386690L;
-
-	static enum Color { RED, BLUE, GREEN, YELLOW, WILD};
-	static enum Value { ZERO("00"), ONE("01"), TWO("02"), THREE("03"), FOUR("04"), FIVE("05"), SIX("06"), SEVEN("07"), EIGHT("08"), NINE("09"), SKIP("S"), DRAW2("D2"), REVERSE("R"), WILD("00"), WILDD4("D4") ;
-		private String numVal;
-		Value(String numVal){
-			this.numVal = numVal;
-		}
-		public String getNumVal(){
-			return numVal;
-		}
-	};
+	static enum Color { RED, BLUE, GREEN, YELLOW, WILD };
+	static enum Value { ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, SKIP, DRAW2, REVERSE, WILD, WILDD4 	};
 	private Color color;
 	private Value value;	
 
@@ -40,8 +31,8 @@ public class Card extends JLabel {
 		this.color = color;
 	}
 
-	private String getValue() {
-		return value.getNumVal();
+	private Value getValue() {
+		return value;
 	}
 
 	private void setValue(Value value) {

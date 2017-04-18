@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
  */
 public class Client implements Receivable{
     private boolean userNotSet;
+    int gameUserCount;
     boolean gameStarted = false;
     private String userName;
     private Protocol handler;
@@ -33,7 +34,7 @@ public class Client implements Receivable{
                     System.exit(0);
                 }
             });
-            //new Thread(new Writer()).start();
+            new Thread(new Writer()).start();
         }catch(IOException e){
             e.printStackTrace();
             JOptionPane.showMessageDialog(gui, "There was an error connecting to the server","Connection Error",JOptionPane.ERROR_MESSAGE);
@@ -42,15 +43,19 @@ public class Client implements Receivable{
 
     @Override
     public void giveMessage(JSONObject message) {
-        if(message.getString("type").equals("acknowledge")){
-            System.out.println("Logged in");
-        }else if(message.getString("type").equals("chat")){
-            gui.newMessage(message.getString("fromUser"),message.getString("message"));
-        }else if(message.getString("type").equals("whois")){
-            message.remove("type");
-            gui.updateWhoIs(message);
-        }else {
-            System.out.println(message);
+        if(message.has("type")) {
+            if (message.getString("type").equals("chat")) {
+                gui.newMessage(message.getString("fromUser"), message.getString("message"));
+            } else if (message.getString("type").equals("whois")) {
+                message.remove("type");
+                gui.updateWhoIs(message);
+            } else {
+                System.out.println(message);
+            }
+        }else if(message.has("action")){
+            if (message.getString("action").equals("dealCard")){
+                gui.placeCard(message);
+            }
         }
     }
 
