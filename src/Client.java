@@ -16,7 +16,7 @@ public class Client implements Receivable{
     private boolean userNotSet;
     int gameUserCount;
     boolean gameStarted = false;
-    private String userName;
+    String userName;
     private Protocol handler;
     private ClientGUI gui;
     public static void main(String [] args){
@@ -34,7 +34,7 @@ public class Client implements Receivable{
                     System.exit(0);
                 }
             });
-            new Thread(new Writer()).start();
+            //new Thread(new Writer()).start();
         }catch(IOException e){
             e.printStackTrace();
             JOptionPane.showMessageDialog(gui, "There was an error connecting to the server","Connection Error",JOptionPane.ERROR_MESSAGE);
@@ -49,6 +49,13 @@ public class Client implements Receivable{
             } else if (message.getString("type").equals("whois")) {
                 message.remove("type");
                 gui.updateWhoIs(message);
+            } else if (message.has("message")) {
+                JSONObject msg = message.getJSONObject("message");
+                if (msg.has("type") && (msg.getString("type").equals("reset"))) {
+                    gui.resetGameGUI();
+                } else if (msg.has("action") && (msg.getString("action").equals("cardDealt"))){
+                    gui.placeCard(msg);
+                }
             } else {
                 System.out.println(message);
             }
@@ -90,8 +97,16 @@ public class Client implements Receivable{
     }
 
     void sendMessage(JSONObject msg){
-        System.out.println(msg);
-        handler.sendMessage(msg);
+        if(msg.has("action")){
+            JSONObject appWrap = new JSONObject();
+            appWrap.put("type","application");
+            appWrap.put("message",msg);
+            System.out.println(appWrap);
+            handler.sendMessage(appWrap);
+        }else {
+            System.out.println(msg);
+            handler.sendMessage(msg);
+        }
     }
 
     private class Writer implements Runnable {

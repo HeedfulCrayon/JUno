@@ -22,7 +22,8 @@ class ClientGUI extends JFrame{
     private JPanel users;
     private JPanel modules;
     private JPanel menuPanel;
-    private JPanel gamePanel;
+    private Game gamePanel;
+    //JPanel gamePanel;
     private JPanel myCardPanel;
     List<JLabel> labels;
     ClientGUI(Client cli){
@@ -43,13 +44,13 @@ class ClientGUI extends JFrame{
 
     private void createWindow(JPanel chat, JPanel menu, JPanel whoIs) {
         setLayout(new GridLayout(1,3));
-        setSize(new Dimension(1500,400));
+        setSize(new Dimension(1600,600));
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
         setVisible(true);
-        add(menu);
         add(chat);
         add(whoIs);
+        add(menu);
         setTitle("Game Server");
         sendTxt.grabFocus();
     }
@@ -57,11 +58,14 @@ class ClientGUI extends JFrame{
     private JPanel buildGame() {
         menuPanel = new JPanel();
         menuPanel.setLayout(new BoxLayout(menuPanel,BoxLayout.Y_AXIS));
+        menuPanel.setBorder(new BevelBorder(BevelBorder.LOWERED));
         addMenuButtons();
-        gamePanel = new JPanel();
+        gamePanel = new Game();
         gamePanel.setLayout(new BorderLayout(5,5));
+        gamePanel.setBorder(new BevelBorder(BevelBorder.LOWERED));
         myCardPanel = new JPanel();
         myCardPanel.setLayout(new FlowLayout());
+        myCardPanel.setBorder(new BevelBorder(BevelBorder.RAISED));
         gamePanel.add(myCardPanel,BorderLayout.SOUTH);
         menuPanel.add(gamePanel);
         return menuPanel;
@@ -134,6 +138,151 @@ class ClientGUI extends JFrame{
         return message;
     }
 
+    private void joinGame() {
+        JSONObject joinMsg = new JSONObject();
+        joinMsg.put("type", "application");
+        JSONObject game = new JSONObject();
+        game.put("action", "joinGame");
+        game.put("module", "juno");
+        joinMsg.put("message", game);
+        client.sendMessage(joinMsg);
+    }
+
+    private void playGame(){
+        JSONObject playMsg = new JSONObject();
+        playMsg.put("type", "application");
+        JSONObject game = new JSONObject();
+        game.put("action", "startGame");
+        game.put("module", "juno");
+        playMsg.put("message", game);
+        client.sendMessage(playMsg);
+    }
+
+    private void quitGame() {
+        JSONObject playMsg = new JSONObject();
+        playMsg.put("type", "application");
+        JSONObject game = new JSONObject();
+        if (client.gameStarted) {
+            game.put("action", "quitGame");
+        }else{
+            game.put("action", "quitGame");
+        }
+        game.put("module", "juno");
+        playMsg.put("message", game);
+        client.sendMessage(playMsg);
+        resetGameGUI();
+    }
+
+    private void resetGame() {
+        JSONObject playMsg = new JSONObject();
+        playMsg.put("type", "application");
+        JSONObject game = new JSONObject();
+        game.put("action", "reset");
+        game.put("module", "juno");
+        playMsg.put("message", game);
+        client.sendMessage(playMsg);
+        myCardPanel.removeAll();
+    }
+
+    private void addMenuButtons(){
+        JToolBar toolbar = new JToolBar();
+        toolbar.setBorder(new BevelBorder(BevelBorder.RAISED));
+        JButton joinGame = new JButton("Join Game");
+        JButton playGame = new JButton("Play Game");
+        JButton callUno = new JButton("Call Uno");
+        JButton quitGame = new JButton("Quit Game");
+        JButton resetGame = new JButton("Reset Game");
+        joinGame.addActionListener((e -> {
+            joinGame.setVisible(false);
+            playGame.setVisible(true);
+            quitGame.setVisible(true);
+            menuPanel.updateUI();
+            joinGame();
+        }));
+        toolbar.add(joinGame);
+        playGame.addActionListener((e -> {
+            playGame.setVisible(false);
+            callUno.setVisible(true);
+            quitGame.setVisible(true);
+            menuPanel.updateUI();
+            playGame();
+        }));
+        playGame.setVisible(false);
+        toolbar.add(playGame);
+        callUno.addActionListener((e -> {
+            callUno();
+        }));
+        callUno.setVisible(false);
+        toolbar.add(callUno);
+        quitGame.addActionListener((e -> {
+            quitGame.setVisible(false);
+            callUno.setVisible(false);
+            joinGame.setVisible(true);
+            menuPanel.updateUI();
+            quitGame();
+        }));
+        quitGame.setVisible(false);
+        toolbar.add(quitGame);
+        resetGame.addActionListener((e -> {
+            quitGame();
+            resetGame();
+        }));
+        toolbar.add(resetGame);
+        toolbar.setFloatable(false);
+        toolbar.setBorderPainted(false);
+        toolbar.setAlignmentX(Component.LEFT_ALIGNMENT);
+        menuPanel.add(toolbar);
+        menuPanel.updateUI();
+    }
+
+    private void callUno() {
+
+    }
+
+    void placeCard(JSONObject msg){
+        if(msg.getString("action").equals("dealCard")){
+            JSONObject jsnCard = new JSONObject(msg.getString("card"));
+            Card.Color c = Card.Color.valueOf(jsnCard.getString("color").toUpperCase());
+            Card.Value val = Card.Value.valueOf(jsnCard.getString("value").toUpperCase());
+            Card card = new Card(c,val);
+            card.setBorder(BorderFactory.createEmptyBorder());
+            card.addActionListener((e -> {
+//                JSONObject message = new JSONObject();
+                JSONObject playCard = new JSONObject();
+                JSONObject newCard = new JSONObject();
+//                message.put("type","application");
+                playCard.put("action","playCard");
+                newCard.put("color",c);
+                newCard.put("value",val);
+                playCard.put("card",newCard);
+//                message.put("message",playCard);
+                client.sendMessage(playCard);
+                myCardPanel.remove(card);
+                myCardPanel.updateUI();
+            }));
+            myCardPanel.add(card);
+            myCardPanel.updateUI();
+        }else if(msg.getString("action").equals("cardDealt")){
+            String user = msg.getString("user");
+            if(!user.equals(client.userName)) {
+                if (gamePanel.hasComponent(user)) {
+                    Hand hand = gamePanel.getHand(user);
+                    Card card = new Card(gamePanel.getLocation(user));
+                    card.setBorder(BorderFactory.createEmptyBorder());
+                    hand.add(card);
+                    hand.updateUI();
+                } else {
+                    Hand hand = new Hand(user);
+                    gamePanel.add(hand, user);
+                    Card card = new Card(gamePanel.getLocation(user));
+                    card.setBorder(BorderFactory.createEmptyBorder());
+                    hand.add(card);
+                    hand.updateUI();
+                }
+            }
+        }
+    }
+
     void newMessage(String user,String msg){
         messages.append(user + ": " + msg + "\r\n");
         JScrollBar bar = messageScrollPane.getVerticalScrollBar();
@@ -202,97 +351,11 @@ class ClientGUI extends JFrame{
         modules.updateUI();
     }
 
-    private void playGame(){
-        JSONObject playMsg = new JSONObject();
-        playMsg.put("type", "application");
-        JSONObject game = new JSONObject();
-        if (client.gameStarted) {
-            game.put("action", "startGame");
-        }else{
-            game.put("action", "joinGame");
-        }
-        game.put("module", "juno");
-        playMsg.put("message", game);
-        client.sendMessage(playMsg);
-    }
-
-    private void quitGame() {
-        JSONObject playMsg = new JSONObject();
-        playMsg.put("type", "application");
-        JSONObject game = new JSONObject();
-        if (client.gameStarted) {
-            game.put("action", "quitGame");
-        }else{
-            game.put("action", "quitGame");
-        }
-        game.put("module", "juno");
-        playMsg.put("message", game);
-        client.sendMessage(playMsg);
-        myCardPanel.removeAll();
-    }
-
-    void placeCard(JSONObject msg){
-        if(msg.has("action")){
-            JSONObject jsnCard = new JSONObject(msg.getString("card"));
-            Card.Color c = Card.Color.valueOf(jsnCard.getString("color").toUpperCase());
-            Card.Value val = Card.Value.valueOf(jsnCard.getString("value").toUpperCase());
-            Card card = new Card(c,val);
-            card.setBorder(BorderFactory.createEmptyBorder());
-            card.addActionListener((e -> {
-                JSONObject message = new JSONObject();
-                JSONObject playCard = new JSONObject();
-                JSONObject newCard = new JSONObject();
-                message.put("type","application");
-                playCard.put("action","playCard");
-                newCard.put("Color",c);
-                newCard.put("Value",val);
-                playCard.put("card",newCard);
-                message.put("message",playCard);
-                client.sendMessage(message);
-                myCardPanel.remove(card);
-                myCardPanel.updateUI();
-            }));
-            myCardPanel.add(card);
-            myCardPanel.updateUI();
-        }else if(msg.has("type")){
-
-        }
-    }
-
-    private void addMenuButtons(){
-        JToolBar toolbar = new JToolBar();
-        JButton playGame = new JButton("Play Game");
-        JButton callUno = new JButton("Call Uno");
-        JButton quitGame = new JButton("Quit Game");
-        playGame.addActionListener((e -> {
-            playGame.setVisible(false);
-            callUno.setVisible(true);
-            quitGame.setVisible(true);
-            menuPanel.updateUI();
-            playGame();
-        }));
-        toolbar.add(playGame);
-        callUno.addActionListener((e -> {
-            callUno();
-        }));
-        callUno.setVisible(false);
-        toolbar.add(callUno);
-        quitGame.addActionListener((e -> {
-            quitGame.setVisible(false);
-            callUno.setVisible(false);
-            playGame.setVisible(true);
-            menuPanel.updateUI();
-            quitGame();
-        }));
-        quitGame.setVisible(false);
-        toolbar.add(quitGame);
-        toolbar.setFloatable(false);
-        toolbar.setBorderPainted(false);
-        toolbar.setAlignmentX(Component.LEFT_ALIGNMENT);
-        menuPanel.add(toolbar);
+    void resetGameGUI() {
+        remove(menuPanel);
+        menuPanel = buildGame();
+        add(menuPanel);
         menuPanel.updateUI();
     }
-
-    private void callUno() {
-    }
+    
 }

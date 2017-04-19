@@ -1,5 +1,7 @@
 
+
 import javax.swing.*;
+import java.awt.*;
 
 public class Card extends JButton {
 	private static final long serialVersionUID = 1700177456984817126L;
@@ -10,7 +12,23 @@ public class Card extends JButton {
 	static enum Color { RED, BLUE, GREEN, YELLOW, WILD };
 	static enum Value { ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, SKIP, DRAW2, REVERSE, WILD, WILDD4 	};
 	private Color color;
-	private Value value;	
+	private Value value;
+
+	Card(String location){
+		ImageIcon cardImage;
+		switch (location) {
+			case BorderLayout.EAST:
+				cardImage = new ImageIcon(getClass().getResource("back-east.png"));
+				break;
+			case BorderLayout.WEST:
+				cardImage = new ImageIcon(getClass().getResource("back-west.png"));
+				break;
+			default:
+				cardImage = new ImageIcon(getClass().getResource("back.png"));
+				break;
+		}
+		setIcon(cardImage);
+	}
 
 	Card(Color color, Value value) {
 		setColor(color);
