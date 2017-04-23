@@ -43,27 +43,112 @@ public class Client implements Receivable{
 
     @Override
     public void giveMessage(JSONObject message) {
-        if(message.has("type")) {
-            if (message.getString("type").equals("chat")) {
-                gui.newMessage(message.getString("fromUser"), message.getString("message"));
-            } else if (message.getString("type").equals("whois")) {
-                message.remove("type");
-                gui.updateWhoIs(message);
-            } else if (message.has("message")) {
-                JSONObject msg = message.getJSONObject("message");
-                if (msg.has("type") && (msg.getString("type").equals("reset"))) {
-                    gui.resetGameGUI();
-                } else if (msg.has("action") && (msg.getString("action").equals("cardDealt"))){
-                    gui.placeCard(msg);
+        if(message.has("type")){
+            switch (message.getString("type")){
+                case "chat":
+                    gui.newMessage(message.getString("fromUser"), message.getString("message"));
+                    break;
+                case "whois":
+                    message.remove("type");
+                    gui.updateWhoIs(message);
+                    break;
+                case "application":
+                    if (message.has("message")) {
+                        JSONObject msg = message.getJSONObject("message");
+                        if (msg.has("action")) {
+                            switch (msg.getString("action")) {
+                                case "cardDealt":
+                                    placeCard(msg);
+                                    break;
+                                case "startCard":
+                                    firstCard(msg);
+                                    //gui.placeCard(msg);
+                                    break;
+                                case "playCard":
+                                    playCard(msg);
+                                    //gui.removeCard(msg);
+                                    break;
+                            }
+                        } else if (msg.has("type") && (msg.getString("type").equals("reset"))){
+                            gui.resetGameGUI();
+                        }
+                    }
+                    break;
+                case "error":
+                    gui.displayError(message);
+                    break;
+                default:
+                    System.out.println(message);
+            }
+        } else if (message.has("action")){
+                if (message.getString("action").equals("dealCard")) {
+                    addMyCard(message);
+                    //gui.placeCard(message);
                 }
-            } else {
-                System.out.println(message);
-            }
-        }else if(message.has("action")){
-            if (message.getString("action").equals("dealCard")){
-                gui.placeCard(message);
-            }
         }
+//        if(message.has("type")) {
+//            if (message.getString("type").equals("chat")) {
+//                gui.newMessage(message.getString("fromUser"), message.getString("message"));
+//            } else if (message.getString("type").equals("whois")) {
+//                message.remove("type");
+//                gui.updateWhoIs(message);
+//            } else if (message.getString("type").equals("application") && message.has("message")) {
+//                JSONObject msg = message.getJSONObject("message");
+//                if (msg.has("type") && (msg.getString("type").equals("reset"))) {
+//                    gui.resetGameGUI();
+//                } else if (msg.has("action") && (msg.getString("action").equals("cardDealt") || msg.getString("action").equals("startCard"))){// && (msg.getString("action").equals("cardDealt"))){
+//                    gui.placeCard(msg);
+//                } else if (msg.has("action") && msg.getString("action").equals("playCard")){
+//                    gui.removeCard(msg);
+//                }
+//            } else if(message.getString("type").equals("error")){
+//                gui.displayError(message);
+//            } else {
+//                System.out.println(message);
+//            }
+//        }else if(message.has("action")){
+//            if (message.getString("action").equals("dealCard")){
+//                gui.placeCard(message);
+//            }
+//        }
+    }
+
+    private void addMyCard(JSONObject message) {
+        JSONObject jsnCard = new JSONObject(message.getString("card"));
+        Card.Color c = Card.Color.valueOf(jsnCard.getString("color").toUpperCase());
+        Card.Value val = Card.Value.valueOf(jsnCard.getString("value").toUpperCase());
+        Card card = new Card(c,val);
+        gui.addMyCard(card);
+    }
+
+    private void placeCard(JSONObject msg) {
+        String user = msg.getString("user");
+        if(!user.equals(userName)) {
+            gui.placeCard(user);
+        }
+    }
+
+    private void playCard(JSONObject msg) {
+        //{"type":"application","message":{"action":"playCard","user":"Ethan","card":"{\"color\":\"WILD\",\"value\":\"WILDD4\"}"}}
+        String user = msg.getString("user");
+        if(user.equals(userName)) {
+            JSONObject jsnCard = new JSONObject(msg.getString("card"));
+            Card card = new Card(Card.Color.valueOf(jsnCard.getString("color")), Card.Value.valueOf(jsnCard.getString("value")));
+            gui.removeCard(card, user);
+        }else{
+            gui.removeCard(user);
+        }
+        JSONObject jsnCard = new JSONObject(msg.getString("card"));
+        Card card = new Card(Card.Color.valueOf(jsnCard.getString("color")), Card.Value.valueOf(jsnCard.getString("value")));
+        gui.updateDiscard(card);
+    }
+
+    private void firstCard(JSONObject msg){
+        JSONObject startCard = new JSONObject(msg.getString("card"));
+        Card discard = new Card(
+                Card.Color.valueOf(startCard.getString("color")),
+                Card.Value.valueOf(startCard.getString("value")));
+        gui.createDiscard(discard);
     }
 
     @Override
@@ -101,27 +186,27 @@ public class Client implements Receivable{
             JSONObject appWrap = new JSONObject();
             appWrap.put("type","application");
             appWrap.put("message",msg);
-            System.out.println(appWrap);
+            System.out.println("Sent: " + appWrap);
             handler.sendMessage(appWrap);
         }else {
-            System.out.println(msg);
+            System.out.println("Sent: " + msg);
             handler.sendMessage(msg);
         }
     }
 
-    private class Writer implements Runnable {
-
-        @Override
-        public void run() {
-            try {
-                while(true){
-                    sendMessage("whois");
-                    Thread.sleep(10000);
-                }
-            }catch(InterruptedException e){
-                e.printStackTrace();
-            }
-
-        }
-    }
+//    private class Writer implements Runnable {
+//
+//        @Override
+//        public void run() {
+//            try {
+//                while(true){
+//                    sendMessage("whois");
+//                    Thread.sleep(10000);
+//                }
+//            }catch(InterruptedException e){
+//                e.printStackTrace();
+//            }
+//
+//        }
+//    }
 }

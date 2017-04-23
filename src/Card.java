@@ -23,17 +23,22 @@ public class Card extends JButton {
 			case BorderLayout.WEST:
 				cardImage = new ImageIcon(getClass().getResource("back-west.png"));
 				break;
+			case BorderLayout.CENTER:
+				cardImage = new ImageIcon(getClass().getResource("back.png"));
+				break;
 			default:
 				cardImage = new ImageIcon(getClass().getResource("back.png"));
 				break;
 		}
 		setIcon(cardImage);
+		setBorder(BorderFactory.createEmptyBorder());
 	}
 
 	Card(Color color, Value value) {
 		setColor(color);
 		setValue(value);
 		setImage();
+		setBorder(BorderFactory.createEmptyBorder());
 	}
 
 	private void setImage() {
@@ -41,7 +46,7 @@ public class Card extends JButton {
 		setIcon(cardImage);
 	}
 
-	private Color getColor() {
+	Color getColor() {
 		return color;
 	}
 
@@ -49,7 +54,7 @@ public class Card extends JButton {
 		this.color = color;
 	}
 
-	private Value getValue() {
+	Value getValue() {
 		return value;
 	}
 
@@ -57,4 +62,22 @@ public class Card extends JButton {
 		this.value = value;
 	}
 
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		Card card = (Card) o;
+
+		if (color != card.color) return false;
+		return value == card.value;
+
+	}
+
+	@Override
+	public int hashCode() {
+		int result = color != null ? color.hashCode() : 0;
+		result = 31 * result + (value != null ? value.hashCode() : 0);
+		return result;
+	}
 }
