@@ -450,4 +450,8 @@ class ClientGUI extends JFrame{
     private void callUno() {
 
     }
+
+    void turnNotify() {
+        JOptionPane.showMessageDialog(null,"It is your turn","Turn",JOptionPane.INFORMATION_MESSAGE);
+    }
 }

@@ -68,6 +68,10 @@ public class Client implements Receivable{
                                     playCard(msg);
                                     //gui.removeCard(msg);
                                     break;
+                                case "turn":
+                                    if(msg.getString("user").equals(userName)) {
+                                        gui.turnNotify();
+                                    }
                             }
                         } else if (msg.has("type") && (msg.getString("type").equals("reset"))){
                             gui.resetGameGUI();
