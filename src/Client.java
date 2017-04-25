@@ -1,8 +1,8 @@
 import junoServer.Protocol;
 import junoServer.Receivable;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
-import javax.swing.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
@@ -14,8 +14,6 @@ import java.util.regex.Pattern;
  */
 public class Client implements Receivable{
     private boolean userNotSet;
-    int gameUserCount;
-    boolean gameStarted = false;
     String userName;
     private Protocol handler;
     private ClientGUI gui;
@@ -23,7 +21,7 @@ public class Client implements Receivable{
         Client client = new Client();
     }
 
-    Client() {
+    private Client() {
         userNotSet = true;
         try {
             handler = new junoServer.Protocol(this);
@@ -37,10 +35,12 @@ public class Client implements Receivable{
             //new Thread(new Writer()).start();
         }catch(IOException e){
             e.printStackTrace();
-            JOptionPane.showMessageDialog(gui, "There was an error connecting to the server","Connection Error",JOptionPane.ERROR_MESSAGE);
+            handleError("There was an error connecting to the server","Connection Error");
+            //JOptionPane.showMessageDialog(gui, "There was an error connecting to the server","Connection Error",JOptionPane.ERROR_MESSAGE);
         }
     }
 
+    // TODO: 4/24/2017 Handle unknown messages with error message or log
     @Override
     public void giveMessage(JSONObject message) {
         if(message.has("type")){
@@ -58,20 +58,39 @@ public class Client implements Receivable{
                         if (msg.has("action")) {
                             switch (msg.getString("action")) {
                                 case "cardDealt":
-                                    placeCard(msg);
+                                    handleCardDealt(msg);
                                     break;
                                 case "startCard":
-                                    firstCard(msg);
-                                    //gui.placeCard(msg);
+                                    handleStartCard(msg);
+                                    if(msg.has("players")){
+                                        JSONArray jsnPlayers = msg.getJSONArray("players");
+                                        for (Object oPlayer: jsnPlayers){
+                                            if(oPlayer instanceof JSONObject){
+                                                JSONObject jsnPlayer = (JSONObject)oPlayer;
+                                                String user = jsnPlayer.getString("username");
+                                                int numOfCards = jsnPlayer.getInt("cards");
+                                                for (int i = 0; i < numOfCards; i++){
+                                                    handleCardDealt(user);
+                                                }
+                                            }
+                                        }
+                                        if(msg.getString("turn").equals(userName)){
+                                            gui.turnNotify(msg.getString("user"));
+                                        }
+                                    }
                                     break;
                                 case "playCard":
-                                    playCard(msg);
-                                    //gui.removeCard(msg);
+                                    handlePlayCard(msg);
                                     break;
                                 case "turn":
-                                    if(msg.getString("user").equals(userName)) {
-                                        gui.turnNotify();
-                                    }
+                                    gui.turnNotify(msg.getString("user"));
+                                    break;
+                                case "callUno":
+                                    gui.unoNotify(msg.getString("user"));
+                                    break;
+                                case "win":
+                                    gui.winNotify(msg.getString("username"));
+                                    break;
                             }
                         } else if (msg.has("type") && (msg.getString("type").equals("reset"))){
                             gui.resetGameGUI();
@@ -79,7 +98,7 @@ public class Client implements Receivable{
                     }
                     break;
                 case "error":
-                    gui.displayError(message);
+                    handleError(message);
                     break;
                 default:
                     System.out.println(message);
@@ -87,72 +106,8 @@ public class Client implements Receivable{
         } else if (message.has("action")){
                 if (message.getString("action").equals("dealCard")) {
                     addMyCard(message);
-                    //gui.placeCard(message);
                 }
         }
-//        if(message.has("type")) {
-//            if (message.getString("type").equals("chat")) {
-//                gui.newMessage(message.getString("fromUser"), message.getString("message"));
-//            } else if (message.getString("type").equals("whois")) {
-//                message.remove("type");
-//                gui.updateWhoIs(message);
-//            } else if (message.getString("type").equals("application") && message.has("message")) {
-//                JSONObject msg = message.getJSONObject("message");
-//                if (msg.has("type") && (msg.getString("type").equals("reset"))) {
-//                    gui.resetGameGUI();
-//                } else if (msg.has("action") && (msg.getString("action").equals("cardDealt") || msg.getString("action").equals("startCard"))){// && (msg.getString("action").equals("cardDealt"))){
-//                    gui.placeCard(msg);
-//                } else if (msg.has("action") && msg.getString("action").equals("playCard")){
-//                    gui.removeCard(msg);
-//                }
-//            } else if(message.getString("type").equals("error")){
-//                gui.displayError(message);
-//            } else {
-//                System.out.println(message);
-//            }
-//        }else if(message.has("action")){
-//            if (message.getString("action").equals("dealCard")){
-//                gui.placeCard(message);
-//            }
-//        }
-    }
-
-    private void addMyCard(JSONObject message) {
-        JSONObject jsnCard = new JSONObject(message.getString("card"));
-        Card.Color c = Card.Color.valueOf(jsnCard.getString("color").toUpperCase());
-        Card.Value val = Card.Value.valueOf(jsnCard.getString("value").toUpperCase());
-        Card card = new Card(c,val);
-        gui.addMyCard(card);
-    }
-
-    private void placeCard(JSONObject msg) {
-        String user = msg.getString("user");
-        if(!user.equals(userName)) {
-            gui.placeCard(user);
-        }
-    }
-
-    private void playCard(JSONObject msg) {
-        //{"type":"application","message":{"action":"playCard","user":"Ethan","card":"{\"color\":\"WILD\",\"value\":\"WILDD4\"}"}}
-        String user = msg.getString("user");
-        if(user.equals(userName)) {
-            JSONObject jsnCard = new JSONObject(msg.getString("card"));
-            Card card = new Card(Card.Color.valueOf(jsnCard.getString("color")), Card.Value.valueOf(jsnCard.getString("value")));
-            gui.removeCard(card, user);
-        }else{
-            gui.removeCard(user);
-        }
-        JSONObject jsnCard = new JSONObject(msg.getString("card"));
-        Card card = new Card(Card.Color.valueOf(jsnCard.getString("color")), Card.Value.valueOf(jsnCard.getString("value")));
-        gui.updateDiscard(card);
-    }
-
-    private void firstCard(JSONObject msg){
-        JSONObject startCard = new JSONObject(msg.getString("card"));
-        Card discard = new Card(
-                Card.Color.valueOf(startCard.getString("color")),
-                Card.Value.valueOf(startCard.getString("value")));
-        gui.createDiscard(discard);
     }
 
     @Override
@@ -161,6 +116,16 @@ public class Client implements Receivable{
             userName = user;
             userNotSet = false;
         }
+    }
+
+    void sendApplicationMsg(String action){
+        JSONObject appWrap = new JSONObject();
+        appWrap.put("type","application");
+        JSONObject msg = new JSONObject();
+        msg.put("action",action);
+        msg.put("module","juno");
+        appWrap.put("message",msg);
+        sendMessage(appWrap);
     }
 
     void sendMessage(String msg){
@@ -196,6 +161,59 @@ public class Client implements Receivable{
             System.out.println("Sent: " + msg);
             handler.sendMessage(msg);
         }
+    }
+
+    private void addMyCard(JSONObject message) {
+        JSONObject jsnCard = new JSONObject(message.getString("card"));
+        Card.Color color = Card.Color.valueOf(jsnCard.getString("color").toUpperCase());
+        Card.Value val = Card.Value.valueOf(jsnCard.getString("value").toUpperCase());
+        Card card = new Card(color,val);
+        gui.addMyCard(card);
+    }
+
+    private void handleCardDealt(JSONObject msg) {
+        String user = msg.getString("user");
+        if(!user.equals(userName)) {
+            gui.placeCard(user);
+        }
+    }
+
+    private void handleCardDealt(String msg) {
+        if(!msg.equals(userName)) {
+            gui.placeCard(msg);
+        }
+    }
+
+    private void handlePlayCard(JSONObject msg) {
+        //{"type":"application","message":{"action":"handlePlayCard","user":"Ethan","card":"{\"color\":\"WILD\",\"value\":\"WILDD4\"}"}}
+        String user = msg.getString("user");
+        if(user.equals(userName)) {
+            JSONObject jsnCard = new JSONObject(msg.getString("card"));
+            Card card = new Card(Card.Color.valueOf(jsnCard.getString("color")), Card.Value.valueOf(jsnCard.getString("value")));
+            gui.removeCard(card, user);
+        }else{
+            gui.removeCard(user);
+        }
+        JSONObject jsnCard = new JSONObject(msg.getString("card"));
+        Card card = new Card(Card.Color.valueOf(jsnCard.getString("color")), Card.Value.valueOf(jsnCard.getString("value")));
+        gui.updateDiscard(card);
+    }
+
+    private void handleStartCard(JSONObject msg){
+        JSONObject startCard = new JSONObject(msg.getString("card"));
+        Card discard = new Card(
+                Card.Color.valueOf(startCard.getString("color")),
+                Card.Value.valueOf(startCard.getString("value")));
+        gui.createDiscard(discard);
+    }
+
+    private void handleError(JSONObject message){
+        String strMessage = message.getString("message");
+        gui.displayError(strMessage,"Error");
+    }
+
+    private void handleError(String message, String title){
+        gui.displayError(message,title);
     }
 
 //    private class Writer implements Runnable {

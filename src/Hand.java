@@ -1,4 +1,6 @@
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
+import java.awt.*;
 import java.util.ArrayList;
 
 /**
@@ -7,16 +9,22 @@ import java.util.ArrayList;
 class Hand extends JPanel {
     private String userName;
     private ArrayList<Card> cards;
-    private JPanel panel;
+    private Color defBackground;
 
     Hand(String user){
         cards = new ArrayList<Card>();
         userName = user;
+        if (!userName.equals("server")) {
+            defBackground = this.getBackground();
+            TitledBorder titleUser = BorderFactory.createTitledBorder(userName);
+            titleUser.setTitleJustification(TitledBorder.CENTER);
+            setBorder(titleUser);
+        }
         updateUI();
     }
 
-    public String getUserName() {
-        return userName;
+    void resetBackground(){
+        this.setBackground(defBackground);
     }
 
     void addCard(Card card){
@@ -43,5 +51,9 @@ class Hand extends JPanel {
                 index++;
             }
         }
+    }
+
+    int getCardCount(){
+        return cards.size();
     }
 }

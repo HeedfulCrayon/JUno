@@ -41,7 +41,7 @@ public class Game extends JPanel {
         }
         components.put(user,comp);
     }
-    void add(Hand comp, boolean discard){
+    private void add(Hand comp, boolean discard){
         super.add(comp,BorderLayout.CENTER);
         if(discard){
             components.put("discard",comp);
