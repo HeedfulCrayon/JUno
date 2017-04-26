@@ -31,7 +31,7 @@ class ClientGUI extends JFrame{
         client = cli;
         createWindow(buildChat(), buildGame(),buildWhois());
     }
-    
+
     private void createWindow(JPanel chat, JPanel menu, JPanel whoIs) {
         setLayout(new GridLayout(1,3));
         setSize(new Dimension(1600,600));
@@ -196,14 +196,20 @@ class ClientGUI extends JFrame{
                 String[] colors = { "GREEN", "BLUE", "YELLOW", "RED" };
                 Card.Color.values();
                 String color = (String) JOptionPane.showInputDialog(null,"Select a color","Color Selection",JOptionPane.QUESTION_MESSAGE,null,colors,colors[0]);
-                jsnCard.put("color",color);
+                if(!(color == null)) {
+                    jsnCard.put("color", color);
+                    jsnCard.put("value", card.getValue());
+                    jsnCardWrapper.put("card", jsnCard);
+                    jsnCardWrapper.put("module", "juno");
+                    client.sendMessage(jsnCardWrapper);
+                }
             }else {
                 jsnCard.put("color", card.getColor());
+                jsnCard.put("value",card.getValue());
+                jsnCardWrapper.put("card",jsnCard);
+                jsnCardWrapper.put("module","juno");
+                client.sendMessage(jsnCardWrapper);
             }
-            jsnCard.put("value",card.getValue());
-            jsnCardWrapper.put("card",jsnCard);
-            jsnCardWrapper.put("module","juno");
-            client.sendMessage(jsnCardWrapper);
         }));
         myHand.addCard(card);
         myHand.updateUI();
