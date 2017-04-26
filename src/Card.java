@@ -4,13 +4,9 @@ import javax.swing.*;
 import java.awt.*;
 
 public class Card extends JButton {
-	private static final long serialVersionUID = 1700177456984817126L;
-
-	/**
-	 * 
-	 */
-	static enum Color { RED, BLUE, GREEN, YELLOW, WILD };
-	static enum Value { ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, SKIP, DRAW2, REVERSE, WILD, WILDD4 	};
+	private static final long serialVersionUID = -1196836707603786183L;
+	enum Color { RED, BLUE, GREEN, YELLOW, WILD }
+	enum Value { ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, SKIP, DRAW2, REVERSE, WILD, WILDD4 }
 	private Color color;
 	private Value value;
 
@@ -66,12 +62,8 @@ public class Card extends JButton {
 	public boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
-
 		Card card = (Card) o;
-
-		if (color != card.color) return false;
-		return value == card.value;
-
+		return color == card.color && value == card.value;
 	}
 
 	@Override

@@ -9,13 +9,9 @@ import java.awt.event.WindowEvent;
 import java.util.*;
 import java.util.List;
 
-/**
- * Created by Nate on 4/14/2017.
- */
 class ClientGUI extends JFrame{
-    private static final long serialVersionUID = 3403737665582698443L;
+    private static final long serialVersionUID = -2929524721374854993L;
     private Client client;
-
     private String currentTurn;
     private JTextArea messages;
     private JTextArea sendTxt;
@@ -26,44 +22,53 @@ class ClientGUI extends JFrame{
     private Game gamePanel;
     private Hand myHand;
     private Card discard;
-    List<JLabel> labels;
+    private JButton playGame;
+    private JButton callUno;
+    private JButton quitGame;
+
     ClientGUI(Client cli){
         client = cli;
-        createWindow(buildChat(), buildGame(),buildWhois());
+        createWindow(buildChat(), buildMenu(),buildWhois(),buildGame());
     }
 
-    private void createWindow(JPanel chat, JPanel menu, JPanel whoIs) {
-        setLayout(new GridLayout(1,3));
-        setSize(new Dimension(1600,600));
+    private void createWindow(JPanel chat, JPanel menu, JPanel whoIs, Game game) {
+        setLayout(new BorderLayout());
+        setSize(new Dimension(1800,600));
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
         setVisible(true);
-        add(chat);
-        add(whoIs);
-        add(menu);
+        add(chat,BorderLayout.WEST);
+        add(whoIs,BorderLayout.CENTER);
+        add(menu,BorderLayout.NORTH);
+        add(game,BorderLayout.EAST);
         setTitle("Game Server");
         sendTxt.grabFocus();
     }
 
-    private JPanel buildGame() {
+    private JPanel buildMenu(){
         menuPanel = new JPanel();
-        menuPanel.setLayout(new BoxLayout(menuPanel,BoxLayout.Y_AXIS));
-        menuPanel.setBorder(new BevelBorder(BevelBorder.LOWERED));
         addMenuButtons();
+        return menuPanel;
+    }
+
+    private Game buildGame() {
         gamePanel = new Game();
+        gamePanel.setPreferredSize(new Dimension(595,595));
         gamePanel.setLayout(new BorderLayout(0,0));
         gamePanel.setBorder(new BevelBorder(BevelBorder.LOWERED));
         myHand = new Hand(client.userName);
         JScrollPane scrollHand = new JScrollPane(myHand);
+        myHand.setVisible(false);
+        scrollHand.setBorder(null);
         scrollHand.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         scrollHand.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
         gamePanel.add(scrollHand,client.userName);
-        menuPanel.add(gamePanel);
-        return menuPanel;
+        return gamePanel;
     }
 
     private JPanel buildChat(){
         JPanel chatPanel = new JPanel();
+        chatPanel.setPreferredSize(new Dimension(595,595));
         JPanel messagePanel = new JPanel();
         messagePanel.setLayout(new BoxLayout(messagePanel, BoxLayout.Y_AXIS));
         messages = new JTextArea(13,40);
@@ -105,16 +110,12 @@ class ClientGUI extends JFrame{
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.LINE_AXIS));
         buttonPanel.add(Box.createHorizontalGlue());
         JButton send = new JButton("Send");
-        send.addActionListener((e) -> {
-            client.sendMessage(send());
-        });
+        send.addActionListener((e) -> client.sendMessage(send()));
         buttonPanel.add(send);
 
         buttonPanel.add(Box.createRigidArea(new Dimension(10,0)));
         JButton cancel = new JButton("Cancel");
-        cancel.addActionListener((e) -> {
-            this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
-        });
+        cancel.addActionListener((e) -> this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING)));
         buttonPanel.add(cancel);
         buttonPanel.add(Box.createRigidArea(new Dimension(10,0)));
         sendPanel.add(buttonPanel);
@@ -131,49 +132,37 @@ class ClientGUI extends JFrame{
         whoIsPanel.add(modules);
         users = new JPanel();
         whoIsPanel.add(users);
+        whoIsPanel.setPreferredSize(new Dimension(595,595));
         return whoIsPanel;
     }
 
     private void addMenuButtons(){
-        JToolBar toolbar = new JToolBar();
-        toolbar.setBorder(new BevelBorder(BevelBorder.RAISED));
-        JButton joinGame = new JButton("Join Game");
-        JButton playGame = new JButton("Play Game");
-        JButton callUno = new JButton("Call Uno");
-        JButton quitGame = new JButton("Quit Game");
+        playGame = new JButton("Play Game");
+        callUno = new JButton("Call Uno");
+        quitGame = new JButton("Quit Game");
         JButton resetGame = new JButton("Reset Game");
-        joinGame.addActionListener((e -> {
-            menuPanel.updateUI();
-            client.sendApplicationMsg("joinGame");
-//            joinGame();
-        }));
-        toolbar.add(joinGame);
         playGame.addActionListener((e -> {
+            playGame.setVisible(false);
             menuPanel.updateUI();
             client.sendApplicationMsg("startGame");
-//            playGame();
         }));
-        toolbar.add(playGame);
-        callUno.addActionListener((e -> {
-            callUno();
-        }));
-        toolbar.add(callUno);
+        menuPanel.add(playGame);
+        callUno.addActionListener((e -> callUno()));
+        callUno.setVisible(false);
+        menuPanel.add(callUno);
         quitGame.addActionListener((e -> {
+            quitGame.setVisible(false);
             menuPanel.updateUI();
             client.sendApplicationMsg("quit");
-//            quitGame();
+            resetGameGUI();
         }));
-        toolbar.add(quitGame);
+        quitGame.setVisible(false);
+        menuPanel.add(quitGame);
         resetGame.addActionListener((e -> {
             client.sendApplicationMsg("reset");
             myHand.removeAll();
-//            resetGame();
         }));
-        toolbar.add(resetGame);
-        toolbar.setFloatable(false);
-        toolbar.setBorderPainted(false);
-        toolbar.setAlignmentX(Component.LEFT_ALIGNMENT);
-        menuPanel.add(toolbar);
+        menuPanel.add(resetGame);
         menuPanel.updateUI();
     }
 
@@ -188,6 +177,12 @@ class ClientGUI extends JFrame{
     }
 
     void addMyCard(Card card){
+        if(!myHand.isVisible()){
+            myHand.setVisible(true);
+            callUno.setVisible(true);
+            quitGame.setVisible(true);
+
+        }
         JSONObject jsnCardWrapper = new JSONObject();
         JSONObject jsnCard = new JSONObject();
         jsnCardWrapper.put("action","playCard");
@@ -264,7 +259,7 @@ class ClientGUI extends JFrame{
     void updateWhoIs(JSONObject jsnWhois){
         JSONArray jsnUsers = jsnWhois.getJSONObject("message").getJSONArray("users");
         System.out.println(jsnWhois);
-        List<JSONObject> userList = new ArrayList<JSONObject>();
+        List<JSONObject> userList = new ArrayList<>();
         for (int i = 0; i < jsnUsers.length(); i++){
             userList.add(jsnUsers.getJSONObject(i));
         }
@@ -288,7 +283,7 @@ class ClientGUI extends JFrame{
         users.updateUI();
 
         JSONArray jsnModules = jsnWhois.getJSONObject("message").getJSONArray("modules");
-        List<JSONObject> moduleList = new ArrayList<JSONObject>();
+        List<JSONObject> moduleList = new ArrayList<>();
         for (int i = 0; i < jsnModules.length(); i++){
             moduleList.add(jsnModules.getJSONObject(i));
         }
@@ -326,10 +321,13 @@ class ClientGUI extends JFrame{
     }
 
     void resetGameGUI() {
-        remove(menuPanel);
-        menuPanel = buildGame();
-        add(menuPanel);
-        menuPanel.updateUI();
+        remove(gamePanel);
+        gamePanel = buildGame();
+        add(gamePanel,BorderLayout.EAST);
+        playGame.setVisible(true);
+        callUno.setVisible(false);
+        quitGame.setVisible(false);
+        gamePanel.updateUI();
     }
 
     void displayError(String message, String title) {

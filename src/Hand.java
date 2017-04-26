@@ -3,20 +3,16 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.util.ArrayList;
 
-/**
- * Created by Nate on 4/18/2017.
- */
 class Hand extends JPanel {
-    private String userName;
+    private static final long serialVersionUID = -5427907627448872237L;
     private ArrayList<Card> cards;
     private Color defBackground;
 
     Hand(String user){
-        cards = new ArrayList<Card>();
-        userName = user;
-        if (!userName.equals("server")) {
+        cards = new ArrayList<>();
+        if (!user.equals("server")) {
             defBackground = this.getBackground();
-            TitledBorder titleUser = BorderFactory.createTitledBorder(userName);
+            TitledBorder titleUser = BorderFactory.createTitledBorder(user);
             titleUser.setTitleJustification(TitledBorder.CENTER);
             setBorder(titleUser);
         }

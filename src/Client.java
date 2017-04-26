@@ -74,9 +74,7 @@ public class Client implements Receivable{
                                                 }
                                             }
                                         }
-                                        if(msg.getString("turn").equals(userName)){
-                                            gui.turnNotify(msg.getString("user"));
-                                        }
+                                        gui.turnNotify(msg.getString("turn"));
                                     }
                                     break;
                                 case "playCard":
@@ -107,6 +105,8 @@ public class Client implements Receivable{
                 if (message.getString("action").equals("dealCard")) {
                     addMyCard(message);
                 }
+        } else {
+            System.out.println(message);
         }
     }
 
