@@ -9,16 +9,13 @@ import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Created by Nate on 4/10/2017.
- */
 public class Client implements Receivable{
     private boolean userNotSet;
     String userName;
     private Protocol handler;
     private ClientGUI gui;
     public static void main(String [] args){
-        Client client = new Client();
+        new Client();
     }
 
     private Client() {
@@ -32,11 +29,9 @@ public class Client implements Receivable{
                     System.exit(0);
                 }
             });
-            //new Thread(new Writer()).start();
         }catch(IOException e){
             e.printStackTrace();
             handleError("There was an error connecting to the server","Connection Error");
-            //JOptionPane.showMessageDialog(gui, "There was an error connecting to the server","Connection Error",JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -145,7 +140,6 @@ public class Client implements Receivable{
                 message.put("username", user);
             }
             gui.newMessage("\t" + userName, msg);
-//            System.out.println(message);
         }
         handler.sendMessage(message);
     }
@@ -155,10 +149,8 @@ public class Client implements Receivable{
             JSONObject appWrap = new JSONObject();
             appWrap.put("type","application");
             appWrap.put("message",msg);
-            System.out.println("Sent: " + appWrap);
             handler.sendMessage(appWrap);
         }else {
-            System.out.println("Sent: " + msg);
             handler.sendMessage(msg);
         }
     }
@@ -216,19 +208,4 @@ public class Client implements Receivable{
         gui.displayError(message,title);
     }
 
-//    private class Writer implements Runnable {
-//
-//        @Override
-//        public void run() {
-//            try {
-//                while(true){
-//                    sendMessage("whois");
-//                    Thread.sleep(10000);
-//                }
-//            }catch(InterruptedException e){
-//                e.printStackTrace();
-//            }
-//
-//        }
-//    }
 }
