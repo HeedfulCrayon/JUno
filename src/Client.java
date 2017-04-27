@@ -2,7 +2,6 @@ import junoServer.Protocol;
 import junoServer.Receivable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
@@ -13,9 +12,10 @@ import java.util.regex.Pattern;
 
 public class Client implements Receivable{
     private boolean userNotSet;
-    String userName;
     private Protocol handler;
     private ClientGUI gui;
+    String userName;
+
     public static void main(String [] args){
         new Client();
     }
@@ -37,7 +37,6 @@ public class Client implements Receivable{
         }
     }
 
-    // TODO: 4/24/2017 Handle unknown messages with error message or log
     @Override
     public void giveMessage(JSONObject message) {
         if(message.has("type")){
@@ -48,7 +47,6 @@ public class Client implements Receivable{
                 case "whois":
                     message.remove("type");
                     updateWhoIs(message);
-//                    gui.updateWhoIs(message);
                     break;
                 case "application":
                     if (message.has("message")) {
@@ -108,6 +106,86 @@ public class Client implements Receivable{
         }
     }
 
+    /**
+     * Method to allow protocol to set userName
+     * @param user String username to set
+     */
+    @Override
+    public void setUsername(String user) {
+        if(userNotSet){
+            userName = user;
+            userNotSet = false;
+        }
+    }
+
+    /**
+     * Wraps in application message
+     * @param action Action to perform
+     */
+    void sendApplicationMsg(String action){
+        JSONObject appWrap = new JSONObject();
+        appWrap.put("type","application");
+        JSONObject msg = new JSONObject();
+        msg.put("action",action);
+        msg.put("module","juno");
+        appWrap.put("message",msg);
+        sendMessage(appWrap);
+    }
+
+    /**
+     * Wraps in action message
+     * @param card Card to send
+     */
+    void sendActionMsg(Card card){
+        JSONObject jsnCardWrapper = new JSONObject();
+        JSONObject jsnCard = new JSONObject();
+        jsnCardWrapper.put("action","playCard");
+        jsnCard.put("color",card.getColor());
+        jsnCard.put("value",card.getValue());
+        jsnCardWrapper.put("card",jsnCard);
+        jsnCardWrapper.put("module","juno");
+        sendMessage(jsnCardWrapper);
+    }
+
+    /**
+     * Sends a chat message, or whois message
+     * @param msg String
+     */
+    void sendMessage(String msg){
+        JSONObject message = new JSONObject();
+        if (msg.equals("whois")){
+            message.put("type","whois");
+        }else {
+            message.put("type", "chat");
+            message.put("message", msg);
+            String regex = "(?<=^|(?<=[^a-zA-Z0-9-_\\\\.]))@([A-Za-z][A-Za-z0-9_]+)";
+            Matcher whisperMatcher = Pattern.compile(regex).matcher(msg);
+            if (whisperMatcher.find()) {
+                String symUser = whisperMatcher.group(0);
+                StringBuilder sb = new StringBuilder(symUser);
+                String user = (sb.deleteCharAt(0)).toString();
+                message.put("username", user);
+            }
+            gui.newMessage("\t" + userName, msg);
+        }
+        handler.sendMessage(message);
+    }
+
+    /**
+     * Sends JSON message to server
+     * @param msg JSONObject to send
+     */
+    private void sendMessage(JSONObject msg){
+        if(msg.has("action")){
+            JSONObject appWrap = new JSONObject();
+            appWrap.put("type","application");
+            appWrap.put("message",msg);
+            handler.sendMessage(appWrap);
+        }else {
+            handler.sendMessage(msg);
+        }
+    }
+
     private void updateWhoIs(JSONObject message) {
         JSONArray jsnUsers = message.getJSONObject("message").getJSONArray("users");
         List<WhoIsUser> userList = new ArrayList<>();
@@ -129,67 +207,6 @@ public class Client implements Receivable{
                     jsnTempModule.getBoolean("started")));
         }
         gui.updateWhoIs(userList,modules);
-    }
-
-    @Override
-    public void setUsername(String user) {
-        if(userNotSet){
-            userName = user;
-            userNotSet = false;
-        }
-    }
-
-    void sendApplicationMsg(String action){
-        JSONObject appWrap = new JSONObject();
-        appWrap.put("type","application");
-        JSONObject msg = new JSONObject();
-        msg.put("action",action);
-        msg.put("module","juno");
-        appWrap.put("message",msg);
-        sendMessage(appWrap);
-    }
-
-    void sendActionMsg(Card card){
-        JSONObject jsnCardWrapper = new JSONObject();
-        JSONObject jsnCard = new JSONObject();
-        jsnCardWrapper.put("action","playCard");
-        jsnCard.put("color",card.getColor());
-        jsnCard.put("value",card.getValue());
-        jsnCardWrapper.put("card",jsnCard);
-        jsnCardWrapper.put("module","juno");
-        sendMessage(jsnCardWrapper);
-    }
-
-    void sendMessage(String msg){
-        JSONObject message = new JSONObject();
-        if (msg.equals("whois")){
-            message.put("type","whois");
-        }else {
-
-            message.put("type", "chat");
-            message.put("message", msg);
-            String regex = "(?<=^|(?<=[^a-zA-Z0-9-_\\\\.]))@([A-Za-z][A-Za-z0-9_]+)";
-            Matcher whisperMatcher = Pattern.compile(regex).matcher(msg);
-            if (whisperMatcher.find()) {
-                String symUser = whisperMatcher.group(0);
-                StringBuilder sb = new StringBuilder(symUser);
-                String user = (sb.deleteCharAt(0)).toString();
-                message.put("username", user);
-            }
-            gui.newMessage("\t" + userName, msg);
-        }
-        handler.sendMessage(message);
-    }
-
-    private void sendMessage(JSONObject msg){
-        if(msg.has("action")){
-            JSONObject appWrap = new JSONObject();
-            appWrap.put("type","application");
-            appWrap.put("message",msg);
-            handler.sendMessage(appWrap);
-        }else {
-            handler.sendMessage(msg);
-        }
     }
 
     private void addMyCard(JSONObject message) {
