@@ -1,12 +1,10 @@
-import org.json.JSONArray;
-import org.json.JSONObject;
+//import org.json.JSONObject;
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
-import java.util.*;
 import java.util.List;
 
 class ClientGUI extends JFrame{
@@ -183,27 +181,15 @@ class ClientGUI extends JFrame{
             quitGame.setVisible(true);
 
         }
-        JSONObject jsnCardWrapper = new JSONObject();
-        JSONObject jsnCard = new JSONObject();
-        jsnCardWrapper.put("action","playCard");
         card.addActionListener((e -> {
             if (card.getColor() == Card.Color.WILD){
                 String[] colors = { "GREEN", "BLUE", "YELLOW", "RED" };
-                Card.Color.values();
                 String color = (String) JOptionPane.showInputDialog(null,"Select a color","Color Selection",JOptionPane.QUESTION_MESSAGE,null,colors,colors[0]);
                 if(!(color == null)) {
-                    jsnCard.put("color", color);
-                    jsnCard.put("value", card.getValue());
-                    jsnCardWrapper.put("card", jsnCard);
-                    jsnCardWrapper.put("module", "juno");
-                    client.sendMessage(jsnCardWrapper);
+                    client.sendActionMsg(new Card(Card.Color.valueOf(color),card.getValue()));
                 }
             }else {
-                jsnCard.put("color", card.getColor());
-                jsnCard.put("value",card.getValue());
-                jsnCardWrapper.put("card",jsnCard);
-                jsnCardWrapper.put("module","juno");
-                client.sendMessage(jsnCardWrapper);
+                client.sendActionMsg(card);
             }
         }));
         myHand.addCard(card);
@@ -215,15 +201,7 @@ class ClientGUI extends JFrame{
             gamePanel.start();
         }
         Card draw = new Card(BorderLayout.CENTER);
-        draw.addActionListener((e -> {
-            JSONObject dealCard = new JSONObject();
-            JSONObject dealAction = new JSONObject();
-            dealCard.put("type","application");
-            dealAction.put("action","dealCard");
-            dealAction.put("module","juno");
-            dealCard.put("message",dealAction);
-            client.sendMessage(dealCard);
-        }));
+        draw.addActionListener((e -> client.sendApplicationMsg("dealCard")));
         gamePanel.getHand("draw").addCard(draw);
         discard = card;
         gamePanel.getHand("discard").addCard(card);
@@ -255,14 +233,8 @@ class ClientGUI extends JFrame{
         JScrollBar bar = messageScrollPane.getVerticalScrollBar();
         bar.setValue(bar.getMaximum());
     }
-    // TODO: 4/24/2017 Move JSON to Client
-    void updateWhoIs(JSONObject jsnWhois){
-        JSONArray jsnUsers = jsnWhois.getJSONObject("message").getJSONArray("users");
-        System.out.println(jsnWhois);
-        List<JSONObject> userList = new ArrayList<>();
-        for (int i = 0; i < jsnUsers.length(); i++){
-            userList.add(jsnUsers.getJSONObject(i));
-        }
+
+    void updateWhoIs(List<WhoIsUser> userList,List<Module> moduleList){
         users.removeAll();
         users.setLayout(new BoxLayout(users,BoxLayout.Y_AXIS));
         users.setBorder(new BevelBorder(BevelBorder.LOWERED));
@@ -270,23 +242,17 @@ class ClientGUI extends JFrame{
         userTitle.setFont(new Font(userTitle.getFont().getName(),Font.BOLD,14));
         users.add(userTitle);
         users.add(Box.createHorizontalGlue());
-        for (JSONObject user:userList) {
+        for (WhoIsUser user:userList) {
             users.add(Box.createRigidArea(new Dimension(10,5)));
-            users.add(new JLabel(user.get("username").toString()));
-            JSONArray jsnUserModules = user.getJSONArray("modules");
+            users.add(new JLabel(user.getUserName()));
             JLabel userModules = new JLabel("Games: ");
-            for (int i = 0; i < jsnUserModules.length(); i++){
-                userModules.setText(userModules.getText() + jsnUserModules.getString(i) + "  ");
+            for (String moduleName:user.getModules()) {
+                userModules.setText(userModules.getText() + moduleName + " ");
             }
             users.add(userModules);
         }
         users.updateUI();
 
-        JSONArray jsnModules = jsnWhois.getJSONObject("message").getJSONArray("modules");
-        List<JSONObject> moduleList = new ArrayList<>();
-        for (int i = 0; i < jsnModules.length(); i++){
-            moduleList.add(jsnModules.getJSONObject(i));
-        }
         modules.removeAll();
         modules.setLayout(new BoxLayout(modules,BoxLayout.Y_AXIS));
         modules.setBorder(new BevelBorder(BevelBorder.LOWERED));
@@ -294,12 +260,12 @@ class ClientGUI extends JFrame{
         gamesTitle.setFont(new Font(gamesTitle.getFont().getName(),Font.BOLD,14));
         modules.add(gamesTitle);
         modules.add(Box.createHorizontalGlue());
-        for (JSONObject module:moduleList) {
+        for (Module module:moduleList) {
             modules.add(Box.createRigidArea(new Dimension(10,5)));
-            String strGameName = module.get("moduleName").toString();
+            String strGameName = module.getName();
             modules.add(new JLabel(strGameName));
             JLabel status = new JLabel();
-            if(module.getBoolean("started")){
+            if(module.isStarted()){
                 status.setText("started");
                 status.setForeground(Color.GREEN);
             }else{

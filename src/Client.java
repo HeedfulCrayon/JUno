@@ -6,6 +6,8 @@ import org.json.JSONObject;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -45,7 +47,8 @@ public class Client implements Receivable{
                     break;
                 case "whois":
                     message.remove("type");
-                    gui.updateWhoIs(message);
+                    updateWhoIs(message);
+//                    gui.updateWhoIs(message);
                     break;
                 case "application":
                     if (message.has("message")) {
@@ -105,6 +108,29 @@ public class Client implements Receivable{
         }
     }
 
+    private void updateWhoIs(JSONObject message) {
+        JSONArray jsnUsers = message.getJSONObject("message").getJSONArray("users");
+        List<WhoIsUser> userList = new ArrayList<>();
+        for (Object user:jsnUsers) {
+            JSONObject jsnTempUser = (JSONObject)user;
+            WhoIsUser tempUser = new WhoIsUser(jsnTempUser.getString("username"));
+            JSONArray jsnTempModules = jsnTempUser.getJSONArray("modules");
+            for (Object module:jsnTempModules) {
+                String moduleName = (String)module;
+                tempUser.addModule(moduleName);
+            }
+            userList.add(tempUser);
+        }
+        JSONArray jsnModules = message.getJSONObject("message").getJSONArray("modules");
+        List<Module> modules = new ArrayList<>();
+        for (Object module:jsnModules) {
+            JSONObject jsnTempModule = (JSONObject)module;
+            modules.add(new Module(jsnTempModule.getString("moduleName"),
+                    jsnTempModule.getBoolean("started")));
+        }
+        gui.updateWhoIs(userList,modules);
+    }
+
     @Override
     public void setUsername(String user) {
         if(userNotSet){
@@ -121,6 +147,17 @@ public class Client implements Receivable{
         msg.put("module","juno");
         appWrap.put("message",msg);
         sendMessage(appWrap);
+    }
+
+    void sendActionMsg(Card card){
+        JSONObject jsnCardWrapper = new JSONObject();
+        JSONObject jsnCard = new JSONObject();
+        jsnCardWrapper.put("action","playCard");
+        jsnCard.put("color",card.getColor());
+        jsnCard.put("value",card.getValue());
+        jsnCardWrapper.put("card",jsnCard);
+        jsnCardWrapper.put("module","juno");
+        sendMessage(jsnCardWrapper);
     }
 
     void sendMessage(String msg){
@@ -144,7 +181,7 @@ public class Client implements Receivable{
         handler.sendMessage(message);
     }
 
-    void sendMessage(JSONObject msg){
+    private void sendMessage(JSONObject msg){
         if(msg.has("action")){
             JSONObject appWrap = new JSONObject();
             appWrap.put("type","application");
