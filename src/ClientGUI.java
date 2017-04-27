@@ -7,7 +7,7 @@ import java.awt.event.WindowEvent;
 import java.util.List;
 
 class ClientGUI extends JFrame{
-    private static final long serialVersionUID = -2929524721374854993L;
+    private static final long serialVersionUID = -2866427868854255532L;
     private Client client;
     private String currentTurn;
     private JTextArea messages;
@@ -19,6 +19,7 @@ class ClientGUI extends JFrame{
     private Game gamePanel;
     private Hand myHand;
     private Card discard;
+    private JButton joinGame;
     private JButton playGame;
     private JButton callUno;
     private JButton quitGame;
@@ -134,15 +135,24 @@ class ClientGUI extends JFrame{
     }
 
     private void addMenuButtons(){
+        joinGame = new JButton("Join Game");
         playGame = new JButton("Play Game");
         callUno = new JButton("Call Uno");
         quitGame = new JButton("Quit Game");
         JButton resetGame = new JButton("Reset Game");
+        joinGame.addActionListener(e -> {
+            joinGame.setVisible(false);
+            playGame.setVisible(true);
+            menuPanel.updateUI();
+            client.sendApplicationMsg("joinGame");
+        });
+        menuPanel.add(joinGame);
         playGame.addActionListener((e -> {
             playGame.setVisible(false);
             menuPanel.updateUI();
             client.sendApplicationMsg("startGame");
         }));
+        playGame.setVisible(false);
         menuPanel.add(playGame);
         callUno.addActionListener((e -> callUno()));
         callUno.setVisible(false);
@@ -176,6 +186,7 @@ class ClientGUI extends JFrame{
     void addMyCard(Card card){
         if(!myHand.isVisible()){
             myHand.setVisible(true);
+            playGame.setVisible(false);
             callUno.setVisible(true);
             quitGame.setVisible(true);
 
@@ -289,7 +300,8 @@ class ClientGUI extends JFrame{
         remove(gamePanel);
         gamePanel = buildGame();
         add(gamePanel,BorderLayout.EAST);
-        playGame.setVisible(true);
+        joinGame.setVisible(true);
+        playGame.setVisible(false);
         callUno.setVisible(false);
         quitGame.setVisible(false);
         gamePanel.updateUI();

@@ -3,7 +3,7 @@ import java.awt.*;
 import java.util.HashMap;
 
 public class Game extends JPanel {
-    private static final long serialVersionUID = 6495017082979067226L;
+    private static final long serialVersionUID = -2502325381832196222L;
     private HashMap<String,Component> components;
     private HashMap<String,String> locations;
     private boolean north;
